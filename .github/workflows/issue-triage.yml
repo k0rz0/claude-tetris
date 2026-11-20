@@ -45,6 +45,7 @@ jobs:
                - **Propuesta de solución**
                - **Riesgos / efectos colaterales**
                - **Preguntas abiertas** (si falta información)
-            4. Solo analizas: NO modifiques código, NO crees ramas ni PRs, NO cierres el issue.
+            4. FORMATO. Todo lo que escribas en GitHub (comentario de diagnóstico y cualquier otro texto) debe estar en Markdown compatible con GitHub Flavored Markdown (GFM): encabezados `##`, listas con `-`, negritas `**`, código en línea con `` ` `` y bloques de código con ``` y lenguaje (ej. ```js), tablas GFM y referencias a issues como `#N`. Evita HTML salvo el marcador `<!-- claude-triage -->`. Al enviar el cuerpo con `gh`, respeta los saltos de línea reales (usa `--body-file` o heredoc, no `\n` literales).
+            5. Solo analizas: NO modifiques código, NO crees ramas ni PRs, NO cierres el issue.
           claude_args: |
             --allowed-tools "Read,Grep,Glob,Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*),Bash(gh api:*)"
