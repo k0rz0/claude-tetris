@@ -1,0 +1,50 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    if: github.actor != 'github-actions[bot]' && github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Analyze issue with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Eres el asistente de triage de issues del repositorio ${{ github.repository }} (Tetris en JavaScript vanilla + Canvas: index.html, style.css, game.js; consulta CLAUDE.md para la arquitectura).
+
+            Issue a analizar: #${{ github.event.issue.number }} (evento: ${{ github.event.action }}).
+
+            Pasos:
+            1. Lee el issue con `gh issue view ${{ github.event.issue.number }} --json title,body,labels,comments`. Explora el código relevante con Read/Grep/Glob para ubicar las funciones y archivos implicados.
+            2. LABELS. Usa SOLO este set (crea los que falten con `gh label create`, consulta los existentes con `gh label list`):
+               - Tipo (exactamente uno): `bug`, `enhancement`, `question`, `documentation`
+               - Área (uno o más): `gameplay`, `controles`, `puntuación`, `render/UI`, `rendimiento`
+               - Severidad (solo si es bug, exactamente uno): `severidad:alta`, `severidad:media`, `severidad:baja`
+               - `needs-info` si falta información para diagnosticar
+               Si el evento es `edited`, reajusta: quita con `gh issue edit --remove-label` los labels del set que ya no apliquen y agrega los nuevos con `--add-label`. No toques labels fuera de este set.
+            3. DIAGNÓSTICO. Publica UN solo comentario en español que empiece con la línea `<!-- claude-triage -->`. Busca si ya existe uno con `gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments --paginate` (el que contenga el marcador): si existe, actualízalo con `gh api -X PATCH repos/${{ github.repository }}/issues/comments/<id> -f body=...`; si no, créalo con `gh issue comment`. Estructura:
+               ## Diagnóstico automático
+               - **Resumen**
+               - **Tipo y severidad**
+               - **Causa probable**
+               - **Archivos/funciones implicados** (ej. `clearLines()` en game.js)
+               - **Pasos para reproducir** (si aplica)
+               - **Propuesta de solución**
+               - **Riesgos / efectos colaterales**
+               - **Preguntas abiertas** (si falta información)
+            4. Solo analizas: NO modifiques código, NO crees ramas ni PRs, NO cierres el issue.
+          claude_args: |
+            --allowed-tools "Read,Grep,Glob,Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*),Bash(gh api:*)"
